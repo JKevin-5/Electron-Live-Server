@@ -3,7 +3,8 @@ const path = require('path')
 const express = require('express');
 
 const server = new express();
-server.use(express.static('./'));
+// 代理dist文件夹
+server.use(express.static('dist'));
 server.listen(80,()=>{
   console.log('your server is running... at here 80')
 })
@@ -84,7 +85,7 @@ function createWindow () {
   console.log(path.join(__dirname, './dist/index.html'))
   // 这里是配置的入口文件，如果需要改变入口文件改这里就可以 为相对路径
   // win.loadFile(path.join(__dirname, './dist/index.html'))
-  win.loadURL('http://localhost/dist/index.html')
+  win.loadURL('http://localhost/index.html')
   // 手动打开开发者工具
   // win.webContents.openDevTools()
  }
