@@ -1,11 +1,11 @@
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu , dialog,ipcMain } = require('electron')
 const path = require('path')
 const express = require('express');
 
-const server = new express();
+let server = new express();
 // 代理dist文件夹
 server.use(express.static('dist'));
-server.listen(80,()=>{
+let web = server.listen(80,()=>{
   console.log('your server is running... at here 80')
 })
 
@@ -14,12 +14,12 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 function createWindow () {   
   // 创建浏览器窗口
   const win = new BrowserWindow({
-  width: 460,
-  height: 800,
-  webPreferences: {
-    nodeIntegration: true,
-    webSecurity: false
-  }
+    width: 460,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: true,
+      webSecurity: false
+    }
   })
   // 清除缓存的内容
   const clearObj = {
@@ -29,6 +29,41 @@ function createWindow () {
   let template = [
     {
       label: '设置',
+      submenu: [
+        {
+          label:'打开文件路径',
+          click: () => {
+            let directory = dialog.showOpenDialogSync(win,{
+              properties: ['openFile', 'openDirectory']
+            });
+            if(directory == null){
+              alert("请选择一个文件夹")
+            }else{
+              console.log(path.join(directory[0]));
+              // 加载动画
+              win.loadURL(`data:text/html,${encodeURIComponent('<div>loading...</div>')}`)
+              win.show()
+
+              // 关闭之前的服务
+              web.close(()=>{
+                console.log('your server is closed... at here 80')
+                // 新建服务
+                server = new express();
+                server.use(express.static(directory[0]));
+                web = server.listen(80,()=>{
+                  console.log('your server is running... at here 80')
+                  setTimeout(()=>{
+                    win.loadURL('http://localhost/index.html')
+                  },1000);
+                })
+              }); 
+            }
+          }
+        }
+      ]
+    },
+    {
+      label: '模式',
       submenu: [
         {
           label: 'pda模式',
