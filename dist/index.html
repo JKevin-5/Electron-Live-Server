@@ -9,16 +9,25 @@
     <script src="./js/vue.js"></script>
 </head>
 <body>
-    <div id="root">{{helloWorld}}</div>
+    <div id="root">
+        <button @click="openPage">导入近期项目</button><br/>
+        <div>{{errorMessage}}</div>
+    </div>
 </body>
-
 <script>
-    Vue.config.productionTip = false; 
+    const { ipcRenderer } = require("electron");
 
+    Vue.config.productionTip = false; 
     const vm = new Vue({
         el: '#root',
         data:{
-            helloWorld: 'Hello World!'
-        }
+            helloWorld: 'Hello World!',
+            errorMessage:''
+        },
+        methods: {
+            openPage(){
+                this.errorMessage = ipcRenderer.sendSync("sync-message", "发个同步消息");
+            }
+        },
     })
 </script>

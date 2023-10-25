@@ -1,8 +1,12 @@
 const { app, BrowserWindow, Menu , dialog,ipcMain } = require('electron')
 const path = require('path')
-const express = require('express');
+const Store = require('electron-store');
 
+const express = require('express');
 let server = new express();
+
+const store = new Store();
+
 // 代理dist文件夹
 server.use(express.static('dist'));
 let web = server.listen(80,()=>{
@@ -18,7 +22,8 @@ function createWindow () {
     height: 800,
     webPreferences: {
       nodeIntegration: true,
-      webSecurity: false
+      webSecurity: false,
+      contextIsolation:false
     }
   })
   // 清除缓存的内容
@@ -34,14 +39,16 @@ function createWindow () {
           label:'打开文件路径',
           click: () => {
             let directory = dialog.showOpenDialogSync(win,{
-              properties: ['openFile', 'openDirectory']
+              properties: ['openDirectory']
             });
             if(directory == null){
               alert("请选择一个文件夹")
             }else{
+              store.set('myDirectory',directory[0]);
               console.log(path.join(directory[0]));
               // 加载动画
-              win.loadURL(`data:text/html,${encodeURIComponent('<div>loading...</div>')}`)
+              // win.loadURL(`data:text/html,${encodeURIComponent('<div>loading...</div>')}`)
+              win.loadFile('./dist/loading.html')
               win.show()
 
               // 关闭之前的服务
@@ -120,11 +127,46 @@ function createWindow () {
   console.log(path.join(__dirname, './dist/index.html'))
   // 这里是配置的入口文件，如果需要改变入口文件改这里就可以 为相对路径
   // win.loadFile(path.join(__dirname, './dist/index.html'))
-  win.loadURL('http://localhost/index.html')
+  // win.loadURL('http://localhost/index.html')
+  win.loadFile('./dist/index.html')
   // 手动打开开发者工具
   // win.webContents.openDevTools()
+
+   ipcMain.on("sync-message", (event, arg) => {
+    try {
+      // 新建服务
+      server = new express();
+      let myDirectory = store.get('myDirectory');
+
+      if(myDirectory==null){
+        event.returnValue = "无近期项目";
+        return true;
+      }
+
+      win.loadFile('./dist/loading.html')
+      win.show()
+
+      // 关闭之前的服务
+      web.close(()=>{
+        console.log('your server is closed... at here 80')
+        // 新建服务
+        server = new express();
+        server.use(express.static(myDirectory));
+        web = server.listen(80,()=>{
+          console.log('your server is running... at here 80')
+          setTimeout(()=>{
+            // http://localhost/assets/www/page/home/mobileHome.html
+            win.loadURL('http://localhost/index.html')
+          },1000);
+        })
+      }); 
+    } catch (error) {
+      event.returnValue = error;
+    }
+
+ });
  }
- 
+
  // Electron会在初始化完成并且准备好创建浏览器窗口时调用这个方法
  // 部分 API 在 ready 事件触发后才能使用。
  app.whenReady().then(createWindow)
