@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>demo</title>
+    <title>首页</title>
     <!-- 引入vue -->
     <script src="./js/vue.js"></script>
 </head>
 <body>
     <div id="root">
-        <button @click="openPage">导入近期项目</button><br/>
-        <div>{{errorMessage}}</div>
+        <h3>历史项目：</h3>
+        {{dir}}
+        <button @click="openPage">打开</button><br/>    
+        <h3>入口文件路径：</h3>
+        <input type="text" name="filePath" v-model="url">
+        <button @click="saveUrl">保存</button><br>
+        <div>{{errorMessage}}</div><br>
     </div>
 </body>
 <script>
@@ -22,11 +27,20 @@
         el: '#root',
         data:{
             helloWorld: 'Hello World!',
-            errorMessage:''
+            errorMessage:'',
+            url:'',
+            dir:''
+        },
+        created() {
+            this.url = ipcRenderer.sendSync("get-url");
+            this.dir = ipcRenderer.sendSync("get-dir");
         },
         methods: {
             openPage(){
-                this.errorMessage = ipcRenderer.sendSync("sync-message", "发个同步消息");
+                alert(ipcRenderer.sendSync("sync-message", "发个同步消息"));
+            },
+            saveUrl(){
+                alert(ipcRenderer.sendSync("save-url",this.url));
             }
         },
     })

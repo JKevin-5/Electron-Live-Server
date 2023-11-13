@@ -7,6 +7,11 @@ let server = new express();
 
 const store = new Store();
 
+// 初始化url
+if(!store.get('myUrl')){
+  store.set('myUrl',"/index.html")
+}
+
 // 代理dist文件夹
 server.use(express.static('dist'));
 let web = server.listen(80,()=>{
@@ -42,7 +47,15 @@ function createWindow () {
               properties: ['openDirectory']
             });
             if(directory == null){
-              alert("请选择一个文件夹")
+              dialog.showMessageBox({
+                title:'警告',
+                type: 'info',
+                message: '请选择一个文件夹',
+                buttons: ['close']
+              }).then(()=>{
+                console.log("对话框被关闭");
+              })
+
             }else{
               store.set('myDirectory',directory[0]);
               console.log(path.join(directory[0]));
@@ -60,11 +73,16 @@ function createWindow () {
                 web = server.listen(80,()=>{
                   console.log('your server is running... at here 80')
                   setTimeout(()=>{
-                    win.loadURL('http://localhost/index.html')
+                    win.loadURL("http://localhost"+store.get('myUrl'))
                   },1000);
                 })
               }); 
             }
+          }
+        },{
+          label: '打开主页',
+          click: () => {
+            win.loadFile('./dist/index.html')
           }
         }
       ]
@@ -114,7 +132,11 @@ function createWindow () {
         },{
           label: '返回上一页',
           click: () => {
-            win.webContents.goBack()
+            let url = win.webContents.getURL();
+            console.log(url);
+            if(!url.includes('/dist/loading.html')&&!url.includes('/dist/index.html')){
+              win.webContents.goBack()
+            }
           }
         }
       ]
@@ -132,7 +154,7 @@ function createWindow () {
   // 手动打开开发者工具
   // win.webContents.openDevTools()
 
-   ipcMain.on("sync-message", (event, arg) => {
+  ipcMain.on("sync-message", (event, arg) => {
     try {
       // 新建服务
       server = new express();
@@ -156,7 +178,8 @@ function createWindow () {
           console.log('your server is running... at here 80')
           setTimeout(()=>{
             // http://localhost/assets/www/page/home/mobileHome.html
-            win.loadURL('http://localhost/index.html')
+            // http://localhost/index.html
+            win.loadURL("http://localhost"+store.get('myUrl'))
           },1000);
         })
       }); 
@@ -164,7 +187,40 @@ function createWindow () {
       event.returnValue = error;
     }
 
- });
+  });
+
+  ipcMain.on("get-dir", (event, arg) => {
+    try{
+      let dir = store.get('myDirectory');
+      event.returnValue = dir;
+    }catch(error){
+      event.returnValue = error;
+    }
+
+  });
+
+  ipcMain.on("save-url", (event, arg) => {
+    try{
+      let url = arg;
+      store.set('myUrl',url);
+      event.returnValue = '设置成功';
+      console.log("设置url："+url)
+    }catch(error){
+      event.returnValue = error;
+    }
+
+  });
+
+  ipcMain.on("get-url", (event, arg) => {
+    try{
+      let url = store.get('myUrl');
+      event.returnValue = url;
+      console.log("获取url："+url)
+    }catch(error){
+      event.returnValue = '';
+    }
+
+  });
  }
 
  // Electron会在初始化完成并且准备好创建浏览器窗口时调用这个方法
