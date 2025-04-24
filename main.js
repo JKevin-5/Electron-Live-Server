@@ -170,16 +170,18 @@ function createWindow () {
 
       // 关闭之前的服务
       web.close(()=>{
-        console.log('your server is closed... at here 80')
+        let port = store.get('myPort');
+        console.log('your server is closed... at here '+port)
         // 新建服务
         server = new express();
         server.use(express.static(myDirectory));
-        web = server.listen(80,()=>{
-          console.log('your server is running... at here 80')
+        port = port?port:80;
+        web = server.listen(port,()=>{
+          console.log('your server is running... at here '+port)
           setTimeout(()=>{
             // http://localhost/assets/www/page/home/mobileHome.html
             // http://localhost/index.html
-            win.loadURL("http://localhost"+store.get('myUrl'))
+            win.loadURL("http://localhost:"+port+store.get('myUrl'))
           },1000);
         })
       }); 
@@ -216,6 +218,29 @@ function createWindow () {
       let url = store.get('myUrl');
       event.returnValue = url;
       console.log("获取url："+url)
+    }catch(error){
+      event.returnValue = '';
+    }
+
+  });
+
+  ipcMain.on("save-port", (event, arg) => {
+    try{
+      let port = arg;
+      store.set('myPort',port);
+      event.returnValue = '设置成功';
+      console.log("设置port："+port)
+    }catch(error){
+      event.returnValue = error;
+    }
+
+  });
+
+  ipcMain.on("get-port", (event, arg) => {
+    try{
+      let port = store.get('myPort');
+      event.returnValue = port;
+      console.log("获取port："+port)
     }catch(error){
       event.returnValue = '';
     }
